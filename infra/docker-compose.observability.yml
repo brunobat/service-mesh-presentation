@@ -1,0 +1,183 @@
+version: "3.8"
+services:
+# Our metrics collector and aggregator
+  prometheus:
+    image: prom/prometheus
+    # In case of failure with grafana with need to be able to access logs of prometheus directly
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+    #We need to make sure fluent-bit is up to avoid failure on compose up message - (restart condition fixes the issue - but its clearer on end user)
+    volumes:
+      - ./configurations/prometheus/:/etc/prometheus/
+      - ./data/prometheus:/prometheus
+    depends_on:
+      - fluent-bit
+    networks:
+      - observability
+# Our dashboard visualizer
+  grafana:
+    image: grafana/grafana
+    networks:
+      - observability
+    restart: unless-stopped
+    volumes:
+      - ./data/grafana/data:/var/lib/grafana
+      - ./configurations/grafana/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml
+    ports:
+      - 3000:3000
+    logging:
+    # For debugging purposes we are logging directly to stdout otherwise in case of failure we won't be able to check grafana logs as they are shipped to loki
+      driver: "json-file"
+      options:
+        max-size: "1m"
+
+  # We will use jaeger query (jaeger tracing ui and rest api) embbeding features inside grafana, so we don't need to expose the UI port directly to the host
+  jaeger-query:
+    image: jaegertracing/jaeger-query
+    environment:
+      CASSANDRA_KEYSPACE: jaeger_v1_dc1
+      CASSANDRA_SERVERS: cassandra
+      CASSANDRA_PORT: 9042
+    restart: on-failure
+    networks:
+      - observability
+
+ # Set services environment variables to communicate to sidecar jaeger agent
+  vegetables:
+    environment:
+      - JAEGER_AGENT_HOST=127.0.0.1
+      - JAEGER_AGENT_PORT=6831
+    logging:
+      driver: fluentd
+      options:
+      # fluentd-address is always relative to the host and not the container - We are exposing 24224 fluentbit port to the host in this scenario
+        fluentd-address: 127.0.0.1:24224
+    #We need to make sure fluent-bit is up to avoid failure on compose up message - (restart condition fixes the issue - but its clearer on end user)
+    depends_on:
+      - fluent-bit
+
+  superheroes:
+    environment:
+      - JAEGER_AGENT_HOST=127.0.0.1
+      - JAEGER_AGENT_PORT=6831
+    logging:
+      driver: fluentd
+      options:
+      # fluentd-address is always relative to the host and not the container - We are exposing 24224 fluentbit port to the host in this scenario
+        fluentd-address: 127.0.0.1:24224
+    #We need to make sure fluent-bit is up to avoid failure on compose up message - (restart condition fixes the issue - but its clearer on end user)
+    depends_on:
+      - fluent-bit
+            
+# Our jaeger trace collector that ingests and aggregates values from jaeger agents
+  jaeger-collector:
+    image: jaegertracing/jaeger-collector:1.22
+    networks:
+      - observability
+      - vegetables #We need to have a way for the service's agents who are in service network to reach collector
+      - superheroes #We need to have a way for the service's agents who are in service network to reach collector
+    logging:
+      driver: fluentd
+      options:
+      # fluentd-address is always relative to the host and not the container - We are exposing 24224 fluentbit port to the host in this scenario
+        fluentd-address: 127.0.0.1:24224
+    environment:
+      SPAN_STORAGE_TYPE: cassandra
+      CASSANDRA_SERVERS: cassandra
+      CASSANDRA_PORT: 9042
+      CASSANDRA_KEYSPACE: jaeger_v1_dc1
+    #We need to make sure fluent-bit is up to avoid failure on compose up message - (restart condition fixes the issue - but its clearer on end user)
+    depends_on:
+      - fluent-bit
+    restart: on-failure
+  
+  cassandra:
+    image: cassandra:3.11.10
+    networks:
+      - observability
+    logging:
+      driver: fluentd
+      options:
+      # fluentd-address is always relative to the host and not the container - We are exposing 24224 fluentbit port to the host in this scenario
+        fluentd-address: 127.0.0.1:24224
+    #We need to make sure fluent-bit is up to avoid failure on compose up message - (restart condition fixes the issue - but its clearer on end user)
+    depends_on:
+      - fluent-bit
+    restart: on-failure
+  
+  #Set the db schema for cassandra to allow for tracing and spans to be sent from collector - Follows a sidecar pattern
+  cassandra-schema:
+    image: jaegertracing/jaeger-cassandra-schema
+    network_mode: "service:cassandra"
+    environment:
+      CQLSH_HOST: 127.0.0.1
+      KEYSPACE: jaeger_v1_dc1
+    restart: on-failure
+
+# Our jaeger agent sidecar for service superheroes
+  jaeger-agent-superheroes:
+    image: jaegertracing/jaeger-agent:1.22
+    network_mode: "service:superheroes"
+    logging:
+      driver: fluentd
+      options:
+      # fluentd-address is always relative to the host and not the container - We are exposing 24224 fluentbit port to the host in this scenario
+        fluentd-address: 127.0.0.1:24224
+    #We need to make sure fluent-bit is up to avoid failure on compose up message - (restart condition fixes the issue - but its clearer on end user)
+    depends_on:
+      - fluent-bit
+    command: ["--reporter.grpc.host-port=jaeger-collector:14250"]
+    restart: on-failure
+
+# Our jaeger agent sidecar for service vegetables
+  jaeger-agent-vegetables:
+    image: jaegertracing/jaeger-agent:1.22
+    network_mode: "service:vegetables"
+    logging:
+      driver: fluentd
+      options:
+      # fluentd-address is always relative to the host and not the container - We are exposing 24224 fluentbit port to the host in this scenario
+        fluentd-address: 127.0.0.1:24224
+    #We need to make sure fluent-bit is up to avoid failure on compose up message - (restart condition fixes the issue - but its clearer on end user)
+    depends_on:
+      - fluent-bit
+    command: ["--reporter.grpc.host-port=jaeger-collector:14250"]
+    restart: on-failure
+
+# Our centralized logging system
+  loki:
+    image: grafana/loki:2.1.0
+    container_name: loki
+    command: -config.file=/mnt/loki-local-config.yaml
+    user: root
+    restart: unless-stopped
+    volumes:
+      - ./data/loki/data:/tmp/loki
+      - ./configurations/logging/loki.yml:/mnt/loki-local-config.yaml
+    networks:
+      - observability
+    logging:
+    # Here we are logging elsewhere to avoid circular logging against itself
+      driver: "json-file"
+      options:
+        max-size: "1m"
+
+# Our logger ingester compatible with fluentd
+  fluent-bit:
+    image: grafana/fluent-bit-plugin-loki:latest
+    container_name: fluent-bit
+    environment:
+      LOKI_URL: http://loki:3100/loki/api/v1/push
+    volumes:
+      - ./configurations/logging/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf
+    ports:
+      - "24224:24224"
+      - "24224:24224/udp"
+    networks:
+      - observability
+    restart: on-failure
+
+networks:
+  observability:

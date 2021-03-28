@@ -1,4 +1,4 @@
-version: "3.8"
+version: "3.9"
 services:
   
   rabbitmq:
@@ -28,29 +28,12 @@ services:
     build:
       context: ../apps/legume-service
       dockerfile: Dockerfile
-    networks:
-      - vegetables
-      - data
-      - events
-    ports:
-      - 8080:8080
 
   superheroes:
     image: service-mesh-presentation/superheroes
     build:
       context: ../apps/hero-service
       dockerfile: Dockerfile
-    networks:
-      - superheroes
-      - data
-      - events
-    ports:
-      - 8081:8080
-      
 
-networks:
-  vegetables:
-  superheroes:
-  data:
-  events:
+
 

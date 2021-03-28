@@ -1,0 +1,92 @@
+version: "3.9"
+
+services:
+  consul:
+    image: consul:1.9.4
+    command: ["consul","agent","-config-file=/config/server.hcl","-config-dir=/config"]
+    volumes:
+      - "./configurations/consul:/config"
+    ports:
+      - 8500:8500
+      - 8502:8502
+    networks:
+      - mesh
+
+  vegetables-connect:
+    image: consul-connect-envoy
+    build:
+      context: mesh
+      dockerfile: Dockerfile
+    network_mode: "service:vegetables"
+    restart: on-failure
+    environment:
+      CONSUL_HTTP_ADDR: host.docker.internal:8500
+      CONSUL_GRPC_ADDR: host.docker.internal:8502
+      CONSUL_SERVICE_NAME: vegetables
+      CONSUL_SERVICE_ID: ${VEGETABLES_VERSION:-vegetables}
+      CONSUL_SERVICE_PORT: 8080
+      CONSUL_PROXY_UPSTREAMS: |
+        - DESTINATION_NAME: superheroes
+          LOCAL_BIND_PORT: 8000
+          LOCAL_BIND_ADDRESS: 127.0.0.1
+        - DESTINATION_NAME: database
+          LOCAL_BIND_PORT: 5432
+          LOCAL_BIND_ADDRESS: 127.0.0.1
+        - DESTINATION_NAME: rabbitmq
+          LOCAL_BIND_PORT: 5672
+          LOCAL_BIND_ADDRESS: 127.0.0.1
+    command: ["consul", "connect", "envoy", "-sidecar-for", "${VEGETABLES_VERSION:-vegetables}", "-http-addr", "http://host.docker.internal:8500", "-grpc-addr", "host.docker.internal:8502", "-admin-bind", "127.0.0.1:0", "--" , "-l", "trace" ]
+  superheroes-connect:
+    image: consul-connect-envoy
+    build:
+      context: mesh
+      dockerfile: Dockerfile
+    network_mode: "service:superheroes"
+    environment:
+      CONSUL_HTTP_ADDR: host.docker.internal:8500
+      CONSUL_GRPC_ADDR: host.docker.internal:8502
+      CONSUL_SERVICE_NAME: superheroes
+      CONSUL_SERVICE_PORT: 8080
+      CONSUL_SERVICE_ID: ${SUPERHEROES_VERSION:-superheroes}
+      CONSUL_PROXY_UPSTREAMS: |
+        - DESTINATION_NAME: vegetables
+          LOCAL_BIND_PORT: 8000
+          LOCAL_BIND_ADDRESS: 127.0.0.1
+        - DESTINATION_NAME: database
+          LOCAL_BIND_PORT: 5432
+          LOCAL_BIND_ADDRESS: 127.0.0.1
+        - DESTINATION_NAME: rabbitmq
+          LOCAL_BIND_PORT: 5672
+          LOCAL_BIND_ADDRESS: 127.0.0.1
+    command: ["consul", "connect", "envoy", "-sidecar-for", "${SUPERHEROES_VERSION:-superheroes}", "-http-addr", "http://host.docker.internal:8500", "-grpc-addr", "host.docker.internal:8502", "-admin-bind", "127.0.0.1:0", "--" , "-l", "trace" ]
+    restart: on-failure
+  database-connect:
+    image: consul-connect-envoy
+    build:
+      context: mesh
+      dockerfile: Dockerfile
+    network_mode: "service:database"
+    environment:
+      CONSUL_HTTP_ADDR: host.docker.internal:8500
+      CONSUL_GRPC_ADDR: host.docker.internal:8502
+      CONSUL_SERVICE_NAME: database
+      CONSUL_SERVICE_PORT: 5432
+      CONSUL_SERVICE_ID: ${DATABASE_VERSION:-database}
+      #We don't define upstreams for database
+    command: ["consul", "connect", "envoy", "-sidecar-for", "${DATABASE_VERSION:-database}", "-http-addr", "http://host.docker.internal:8500", "-grpc-addr", "host.docker.internal:8502", "-admin-bind", "127.0.0.1:0", "--" , "-l", "trace" ]
+    restart: on-failure
+  rabbitmq-connect:
+    image: consul-connect-envoy
+    build:
+      context: mesh
+      dockerfile: Dockerfile
+    network_mode: "service:rabbitmq"
+    environment:
+      CONSUL_HTTP_ADDR: host.docker.internal:8500
+      CONSUL_GRPC_ADDR: host.docker.internal:8502
+      CONSUL_SERVICE_NAME: rabbitmq
+      CONSUL_SERVICE_PORT: 5672
+      CONSUL_SERVICE_ID: ${RABBITMQ_VERSION:-rabbitmq}
+      #We don't define upstreams for database
+    command: ["consul", "connect", "envoy", "-sidecar-for", "${RABBITMQ_VERSION:-rabbitmq}", "-http-addr", "http://host.docker.internal:8500", "-grpc-addr", "host.docker.internal:8502", "-admin-bind", "127.0.0.1:0", "--" , "-l", "trace" ]
+    restart: on-failure

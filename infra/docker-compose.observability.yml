@@ -14,13 +14,11 @@ services:
       - ./data/prometheus:/prometheus
     depends_on:
       - fluent-bit
-    networks:
-      - observability
+    ports:
+      - 9090:9090
 # Our dashboard visualizer
   grafana:
-    image: grafana/grafana
-    networks:
-      - observability
+    image: grafana/grafana:7.5.2
     restart: unless-stopped
     volumes:
 #      - ./data/grafana/data:/var/lib/grafana
@@ -46,6 +44,30 @@ services:
     ports:
       - 16686:16686
 
+  database:
+    logging:
+      driver: fluentd
+      options:
+      # fluentd-address is always relative to the host and not the container - We are exposing 24224 fluentbit port to the host in this scenario
+        fluentd-address: 127.0.0.1:24224
+        labels: service_name
+    depends_on:
+      - fluent-bit
+    labels: 
+      - service_name=database
+
+  rabbitmq:
+    logging:
+      driver: fluentd
+      options:
+      # fluentd-address is always relative to the host and not the container - We are exposing 24224 fluentbit port to the host in this scenario
+        fluentd-address: 127.0.0.1:24224
+        labels: service_name
+    depends_on:
+      - fluent-bit
+    labels: 
+      - service_name=rabbitmq
+
  # Set services environment variables to communicate to sidecar jaeger agent
   vegetables:
     environment:
@@ -56,9 +78,12 @@ services:
       options:
       # fluentd-address is always relative to the host and not the container - We are exposing 24224 fluentbit port to the host in this scenario
         fluentd-address: 127.0.0.1:24224
+        labels: service_name
     #We need to make sure fluent-bit is up to avoid failure on compose up message - (restart condition fixes the issue - but its clearer on end user)
     depends_on:
       - fluent-bit
+    labels:
+      - service_name=vegetables
 
   superheroes:
     environment:
@@ -69,22 +94,24 @@ services:
       options:
       # fluentd-address is always relative to the host and not the container - We are exposing 24224 fluentbit port to the host in this scenario
         fluentd-address: 127.0.0.1:24224
+        labels: service_name
     #We need to make sure fluent-bit is up to avoid failure on compose up message - (restart condition fixes the issue - but its clearer on end user)
     depends_on:
       - fluent-bit
+    labels:
+      - service_name=superheroes
             
 # Our jaeger trace collector that ingests and aggregates values from jaeger agents
   jaeger-collector:
     image: jaegertracing/jaeger-collector:1.22
-    networks:
-      - observability
-      - vegetables #We need to have a way for the service's agents who are in service network to reach collector
-      - superheroes #We need to have a way for the service's agents who are in service network to reach collector
+    labels:
+      - service_name=jaeger-collector
     logging:
       driver: fluentd
       options:
       # fluentd-address is always relative to the host and not the container - We are exposing 24224 fluentbit port to the host in this scenario
         fluentd-address: 127.0.0.1:24224
+        labels: service_name
     environment:
       SPAN_STORAGE_TYPE: cassandra
       CASSANDRA_SERVERS: cassandra
@@ -97,22 +124,22 @@ services:
   
   cassandra:
     image: cassandra:3.11.10
-    networks:
-      - observability
     logging:
       driver: fluentd
       options:
       # fluentd-address is always relative to the host and not the container - We are exposing 24224 fluentbit port to the host in this scenario
         fluentd-address: 127.0.0.1:24224
+        labels: service_name
     #We need to make sure fluent-bit is up to avoid failure on compose up message - (restart condition fixes the issue - but its clearer on end user)
     depends_on:
       - fluent-bit
     restart: on-failure
+    labels:
+      - service_name=cassandra
   
   #Set the db schema for cassandra to allow for tracing and spans to be sent from collector - Follows a sidecar pattern
   cassandra-schema:
     image: jaegertracing/jaeger-cassandra-schema
-    network_mode: "service:cassandra"
     environment:
       CQLSH_HOST: 127.0.0.1
       KEYSPACE: jaeger_v1_dc1
@@ -121,33 +148,36 @@ services:
 # Our jaeger agent sidecar for service superheroes
   jaeger-agent-superheroes:
     image: jaegertracing/jaeger-agent:1.22
-    network_mode: "service:superheroes"
     logging:
       driver: fluentd
       options:
       # fluentd-address is always relative to the host and not the container - We are exposing 24224 fluentbit port to the host in this scenario
         fluentd-address: 127.0.0.1:24224
+        labels: service_name
     #We need to make sure fluent-bit is up to avoid failure on compose up message - (restart condition fixes the issue - but its clearer on end user)
     depends_on:
       - fluent-bit
     command: ["--reporter.grpc.host-port=jaeger-collector:14250"]
     restart: on-failure
+    labels:
+      - service_name=jaeger-agent-superheroes
 
 # Our jaeger agent sidecar for service vegetables
   jaeger-agent-vegetables:
     image: jaegertracing/jaeger-agent:1.22
-    network_mode: "service:vegetables"
     logging:
       driver: fluentd
       options:
       # fluentd-address is always relative to the host and not the container - We are exposing 24224 fluentbit port to the host in this scenario
         fluentd-address: 127.0.0.1:24224
+        labels: service_name
     #We need to make sure fluent-bit is up to avoid failure on compose up message - (restart condition fixes the issue - but its clearer on end user)
     depends_on:
       - fluent-bit
     command: ["--reporter.grpc.host-port=jaeger-collector:14250"]
     restart: on-failure
-
+    labels:
+      - service_name=jaeger-agent-vegetables
 # Our centralized logging system
   loki:
     image: grafana/loki:2.1.0
@@ -158,8 +188,6 @@ services:
     volumes:
       - ./data/loki/data:/tmp/loki
       - ./configurations/logging/loki.yml:/mnt/loki-local-config.yaml
-    networks:
-      - observability
     logging:
     # Here we are logging elsewhere to avoid circular logging against itself
       driver: "json-file"
@@ -177,9 +205,4 @@ services:
     ports:
       - "24224:24224"
       - "24224:24224/udp"
-    networks:
-      - observability
     restart: on-failure
-
-networks:
-  observability:

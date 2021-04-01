@@ -106,11 +106,16 @@
             <version>${lombok.version}</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>io.quarkiverse.loggingjson</groupId>
+            <artifactId>quarkiverse-logging-json</artifactId>
+            <version>0.2.3</version>
+        </dependency>
 <!--        tests      -->
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-jdbc-h2</artifactId>
-<!--            <scope>test</scope>-->
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.rest-assured</groupId>

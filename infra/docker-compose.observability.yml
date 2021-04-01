@@ -23,7 +23,7 @@ services:
       - observability
     restart: unless-stopped
     volumes:
-      - ./data/grafana/data:/var/lib/grafana
+#      - ./data/grafana/data:/var/lib/grafana
       - ./configurations/grafana/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml
     ports:
       - 3000:3000

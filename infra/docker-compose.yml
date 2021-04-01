@@ -10,26 +10,32 @@ services:
     image: postgres:11.5
     networks:
       - data
+    environment:
+      POSTGRES_PASSWORD: changeit
+      POSTGRES_USER: pguser
+      POSTGRES_DB: test
 
   vegetables:
     image: service-mesh-presentation/vegetables
     build:
-      context: ../apps
+      context: ../apps/legume-service
       dockerfile: Dockerfile
-    command: all # Stub to be removed with final service definition
     networks:
       - vegetables
+      - data
+      - events
     ports:
       - 8080:8080
 
   superheroes:
     image: service-mesh-presentation/superheroes
     build:
-      context: ../apps
+      context: ../apps/hero-service
       dockerfile: Dockerfile
-    command: all # Stub to be removed with final service definition
     networks:
       - superheroes
+      - data
+      - events
     ports:
       - 8081:8080
       

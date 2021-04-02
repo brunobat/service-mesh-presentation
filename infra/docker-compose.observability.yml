@@ -43,6 +43,8 @@ services:
     restart: on-failure
     networks:
       - observability
+    ports:
+      - 16686:16686
 
  # Set services environment variables to communicate to sidecar jaeger agent
   vegetables:

@@ -2,9 +2,17 @@ version: "3.8"
 services:
   
   rabbitmq:
-    image: rabbitmq
+    image: rabbitmq:management
+    environment:
+#      RABBITMQ_ERLANG_COOKIE: ${RABBITMQ_ERLANG_COOKIE}
+      RABBITMQ_DEFAULT_USER: rabbitmq
+      RABBITMQ_DEFAULT_PASS: rabbitmq
+      RABBITMQ_DEFAULT_VHOST: /demo
     networks:
       - events
+    ports:
+      - 5672:5672
+      - 15672:15672
   
   database:
     image: postgres:11.5

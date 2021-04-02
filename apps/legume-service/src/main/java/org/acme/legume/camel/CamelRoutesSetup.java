@@ -67,7 +67,7 @@ public class CamelRoutesSetup {
                         "&addresses=" + host + ":" + port +
                         "&username=" + "rabbitmq" +
                         "&password=" + "rabbitmq" +
-                        "&vhost=" + "/demo" +
+                        "&vhost=" + "demo" +
                         "&routingKey=" + "demo" +
                         "&queue=" + "demo";
 

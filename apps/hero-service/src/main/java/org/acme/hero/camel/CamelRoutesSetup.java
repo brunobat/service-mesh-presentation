@@ -70,7 +70,7 @@ public class CamelRoutesSetup {
                     "&addresses=" + host + ":" + port +
                     "&username=" + "rabbitmq" +
                     "&password=" + "rabbitmq" +
-                    "&vhost=" + "/demo" +
+                    "&vhost=" + "demo" +
                     "&queue=" + "demoQueue";
 
                 from(fromUri)

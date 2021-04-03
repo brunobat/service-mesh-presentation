@@ -4,6 +4,9 @@ services:
   rabbitmq:
     networks:
       - services
+    ports:
+      - 5672:5672
+      - 15672:15672
   database:
     networks:
       - services
@@ -14,7 +17,7 @@ services:
       - 8080:8080
   superheroes:
     networks:
-      - superheroes
+      - services
     ports:
       - 8081:8080
   prometheus:

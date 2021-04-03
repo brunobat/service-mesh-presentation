@@ -8,16 +8,9 @@ services:
       RABBITMQ_DEFAULT_USER: rabbitmq
       RABBITMQ_DEFAULT_PASS: rabbitmq
       RABBITMQ_DEFAULT_VHOST: /demo
-    networks:
-      - events
-    ports:
-      - 5672:5672
-      - 15672:15672
   
   database:
     image: postgres:11.5
-    networks:
-      - data
     environment:
       POSTGRES_PASSWORD: changeit
       POSTGRES_USER: pguser
@@ -26,14 +19,17 @@ services:
   vegetables:
     image: service-mesh-presentation/vegetables
     build:
-      context: ../apps/legume-service
+      context: ../apps
       dockerfile: Dockerfile
-
+      # Set mode MODE=dev to build with local target resources (triggers target=vegetablesdev) - MODE=dev observability build
+      target: vegetables${MODE:-}
   superheroes:
     image: service-mesh-presentation/superheroes
     build:
-      context: ../apps/hero-service
+      context: ../apps
       dockerfile: Dockerfile
+      # Set mode MODE=dev to build with local target resources (triggers target=superheroesdev) - MODE=dev observability build
+      target: superheroes${MODE:-}
 
 
 

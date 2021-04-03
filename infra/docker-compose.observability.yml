@@ -67,8 +67,10 @@ services:
  # Set services environment variables to communicate to sidecar jaeger agent
   vegetables:
     environment:
-      - JAEGER_AGENT_HOST=127.0.0.1
-      - JAEGER_AGENT_PORT=6831
+      - QUARKUS_JAEGER_AGENT_HOST_PORT=127.0.0.1:6831
+      - QUARKUS_JAEGER_SAMPLER_PARAM=1
+      - QUARKUS_JAEGER_SAMPLER_TYPE=const
+      - QUARKUS_JAEGER_SERVICE_NAME=vegetables
     logging:
       driver: fluentd
       options:
@@ -83,8 +85,10 @@ services:
 
   superheroes:
     environment:
-      - JAEGER_AGENT_HOST=127.0.0.1
-      - JAEGER_AGENT_PORT=6831
+      - QUARKUS_JAEGER_AGENT_HOST_PORT=127.0.0.1:6831
+      - QUARKUS_JAEGER_SAMPLER_PARAM=1
+      - QUARKUS_JAEGER_SAMPLER_TYPE=const
+      - QUARKUS_JAEGER_SERVICE_NAME=superheroes
     logging:
       driver: fluentd
       options:

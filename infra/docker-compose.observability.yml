@@ -11,7 +11,7 @@ services:
     #We need to make sure fluent-bit is up to avoid failure on compose up message - (restart condition fixes the issue - but its clearer on end user)
     volumes:
       - ./configurations/prometheus/:/etc/prometheus/
-      - ./data/prometheus:/prometheus
+      - data_prometheus:/prometheus
     depends_on:
       - fluent-bit
     ports:
@@ -21,7 +21,7 @@ services:
     image: grafana/grafana:7.5.2
     restart: unless-stopped
     volumes:
-#      - ./data/grafana/data:/var/lib/grafana
+      - data_grafana:/var/lib/grafana
       - ./configurations/grafana/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml
     ports:
       - 3000:3000
@@ -39,10 +39,6 @@ services:
       CASSANDRA_SERVERS: cassandra
       CASSANDRA_PORT: 9042
     restart: on-failure
-    networks:
-      - observability
-    ports:
-      - 16686:16686
 
   database:
     logging:
@@ -136,6 +132,8 @@ services:
     restart: on-failure
     labels:
       - service_name=cassandra
+    volumes:
+      - data_cassandra:/var/lib/cassandra
   
   #Set the db schema for cassandra to allow for tracing and spans to be sent from collector - Follows a sidecar pattern
   cassandra-schema:
@@ -186,7 +184,7 @@ services:
     user: root
     restart: unless-stopped
     volumes:
-      - ./data/loki/data:/tmp/loki
+      - data_loki:/tmp/loki
       - ./configurations/logging/loki.yml:/mnt/loki-local-config.yaml
     logging:
     # Here we are logging elsewhere to avoid circular logging against itself
@@ -206,3 +204,9 @@ services:
       - "24224:24224"
       - "24224:24224/udp"
     restart: on-failure
+
+volumes:
+  data_prometheus:
+  data_grafana:
+  data_loki:
+  data_cassandra:

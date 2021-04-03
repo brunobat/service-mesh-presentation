@@ -3,13 +3,13 @@ version: "3.9"
 services:
   rabbitmq:
     networks:
-      - events
+      - services
   database:
     networks:
-      - data
+      - services
   vegetables:
     networks:
-      - vegetables
+      - services
     ports:
       - 8080:8080
   superheroes:
@@ -20,6 +20,7 @@ services:
   prometheus:
     networks:
       - observability
+      - services
   grafana:
     networks:
       - observability
@@ -29,8 +30,9 @@ services:
   jaeger-collector:
     networks:
       - observability
-      - vegetables #We need to have a way for the service's agents who are in service network to reach collector
-      - superheroes #We need to have a way for the service's agents who are in service network to reach collector
+      - services #We need to have a way for the service's agents who are in service network to reach collector
+    ports:
+      - 16686:16686
   cassandra:
     networks:
       - observability
@@ -48,8 +50,5 @@ services:
       - observability
 
 networks:
-  vegetables:
-  superheroes:
-  data:
-  events:
+  services:
   observability:

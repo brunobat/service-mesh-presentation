@@ -1,0 +1,57 @@
+#The reason for this file has to do with how docker-compose merge strategy works and incompatible networks and modes in this demo
+version: "3.9"
+services:
+  rabbitmq:
+    networks:
+      - services
+    ports:
+      - 5672:5672
+      - 15672:15672
+  database:
+    networks:
+      - services
+  vegetables:
+    networks:
+      - services
+    ports:
+      - 8080:8080
+  superheroes:
+    networks:
+      - services
+    ports:
+      - 8081:8080
+  prometheus:
+    networks:
+      - observability
+      - services
+  grafana:
+    networks:
+      - observability
+  jaeger-query:
+    networks:
+      - observability
+  jaeger-collector:
+    networks:
+      - observability
+      - services #We need to have a way for the service's agents who are in service network to reach collector
+    ports:
+      - 16686:16686
+  cassandra:
+    networks:
+      - observability
+  cassandra-schema:
+    network_mode: "service:cassandra"
+  jaeger-agent-superheroes:
+    network_mode: "service:superheroes"
+  jaeger-agent-vegetables:
+    network_mode: "service:vegetables"
+  loki:
+    networks:
+      - observability
+  fluent-bit:
+    networks:
+      - observability
+
+networks:
+  services:
+  observability:

@@ -111,7 +111,11 @@
             <artifactId>quarkiverse-logging-json</artifactId>
             <version>0.2.3</version>
         </dependency>
-<!--        tests      -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-smallrye-opentracing</artifactId>
+        </dependency>
+        <!--        tests      -->
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-jdbc-h2</artifactId>

@@ -30,12 +30,12 @@ services:
   jaeger-query:
     networks:
       - observability
+    ports:
+      - 16686:16686
   jaeger-collector:
     networks:
       - observability
       - services #We need to have a way for the service's agents who are in service network to reach collector
-    ports:
-      - 16686:16686
   cassandra:
     networks:
       - observability

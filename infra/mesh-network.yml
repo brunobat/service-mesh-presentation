@@ -16,6 +16,12 @@ services:
   superheroes:
     networks:
       - mesh
+  vegetables-v2:
+    networks:
+      - mesh
+  superheroes-v2:
+    networks:
+      - mesh
   database:
     networks:
       - mesh

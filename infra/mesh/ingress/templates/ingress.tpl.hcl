@@ -6,7 +6,7 @@ Listeners = [
 
  {
    Port = "8080"
-   Protocol = "tcp"
+   Protocol = "http"
    Services = [
       {
         Name = "vegetables"
@@ -16,7 +16,7 @@ Listeners = [
 
  {
    Port = "8090"
-   Protocol = "tcp"
+   Protocol = "http"
    Services = [
       {
         Name = "superheroes"

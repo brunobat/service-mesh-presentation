@@ -44,6 +44,8 @@ services:
       CONSUL_SERVICE_NAME: vegetables
       CONSUL_SERVICE_ID: ${VEGETABLES_VERSION:-vegetables}
       CONSUL_SERVICE_PORT: 8080
+      CONSUL_TAGS: |
+        - v1 
       CONSUL_PROXY_UPSTREAMS: |
         - DESTINATION_NAME: superheroes
           LOCAL_BIND_PORT: 8000
@@ -54,6 +56,15 @@ services:
         - DESTINATION_NAME: rabbitmq
           LOCAL_BIND_PORT: 5672
           LOCAL_BIND_ADDRESS: 127.0.0.1
+      CONSUL_CHECKS:  |
+        - NAME: health uri
+          PROTOCOL: http
+          PATH: /health
+          INTERVAL: 10s
+        - NAME: live uri
+          PROTOCOL: http
+          PATH: /health/live
+          INTERVAL: 10s
     command: ["consul", "connect", "envoy", "-sidecar-for", "${VEGETABLES_VERSION:-vegetables}", "-admin-bind", "127.0.0.1:0", "--" , "-l", "trace" ]
   superheroes-connect:
     image: consul-connect-envoy
@@ -68,6 +79,8 @@ services:
       CONSUL_SERVICE_NAME: superheroes
       CONSUL_SERVICE_PORT: 8080
       CONSUL_SERVICE_ID: ${SUPERHEROES_VERSION:-superheroes}
+      CONSUL_TAGS: |
+        - v1
       CONSUL_PROXY_UPSTREAMS: |
         - DESTINATION_NAME: vegetables
           LOCAL_BIND_PORT: 8000
@@ -78,6 +91,15 @@ services:
         - DESTINATION_NAME: rabbitmq
           LOCAL_BIND_PORT: 5672
           LOCAL_BIND_ADDRESS: 127.0.0.1
+      CONSUL_CHECKS:  |
+        - NAME: health uri
+          PROTOCOL: http
+          PATH: /health
+          INTERVAL: 10s
+        - NAME: live uri
+          PROTOCOL: http
+          PATH: /health/live
+          INTERVAL: 10s
     command: ["consul", "connect", "envoy", "-sidecar-for", "${SUPERHEROES_VERSION:-superheroes}", "-admin-bind", "127.0.0.1:0", "--" , "-l", "trace" ]
     restart: on-failure
   database-connect:
@@ -128,7 +150,7 @@ services:
     build:
       context: mesh
       dockerfile: Dockerfile
-    network_mode: "service:vegetables"
+    network_mode: "service:vegetables-v2"
     restart: on-failure
     environment:
       SERVICE_CONFIG: /sidecar/templates/proxy
@@ -137,6 +159,8 @@ services:
       CONSUL_SERVICE_NAME: vegetables
       CONSUL_SERVICE_ID: vegetables-v2
       CONSUL_SERVICE_PORT: 8080
+      CONSUL_TAGS: |
+        - v2 
       CONSUL_PROXY_UPSTREAMS: |
         - DESTINATION_NAME: superheroes
           LOCAL_BIND_PORT: 8000
@@ -147,6 +171,15 @@ services:
         - DESTINATION_NAME: rabbitmq
           LOCAL_BIND_PORT: 5672
           LOCAL_BIND_ADDRESS: 127.0.0.1
+      CONSUL_CHECKS:  |
+        - NAME: health uri
+          PROTOCOL: http
+          PATH: /health
+          INTERVAL: 10s
+        - NAME: live uri
+          PROTOCOL: http
+          PATH: /health/live
+          INTERVAL: 10s
     command: ["consul", "connect", "envoy", "-sidecar-for", "vegetables-v2",  "-admin-bind", "127.0.0.1:0", "--" , "-l", "trace" ]
   superheroes-connect-v2:
     image: consul-connect-envoy
@@ -171,6 +204,17 @@ services:
         - DESTINATION_NAME: rabbitmq
           LOCAL_BIND_PORT: 5672
           LOCAL_BIND_ADDRESS: 127.0.0.1
+      CONSUL_TAGS: |
+        - v2 
+      CONSUL_CHECKS:  |
+        - NAME: health uri
+          PROTOCOL: http
+          PATH: /health
+          INTERVAL: 10s
+        - NAME: live uri
+          PROTOCOL: http
+          PATH: /health/live
+          INTERVAL: 10s
     command: ["consul", "connect", "envoy", "-sidecar-for", "superheroes-v2", "-admin-bind", "127.0.0.1:0", "--" , "-l", "trace" ]
   ingress:
     image: consul-connect-envoy
@@ -183,11 +227,11 @@ services:
       CONSUL_GRPC_ADDR: host.docker.internal:8502
       CONSUL_INGRESS_SERVICES: |
         - NAME: vegetables
-          PROTOCOL: tcp
+          PROTOCOL: http
           PORT: 8080
         - NAME: superheroes
-          PROTOCOL: tcp
+          PROTOCOL: http
           PORT: 8090
     volumes:
       - ./mesh/ingress/templates:/templates/ingress
-    command: ["consul", "connect", "envoy", "-gateway=ingress", "-register", "-service", "ingress-service"]
+    command: ["consul", "connect", "envoy", "-gateway=ingress", "-register", "-service", "ingress-service", "-address", "{{ GetInterfaceIP \"eth0\" }}:8100"]

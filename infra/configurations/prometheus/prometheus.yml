@@ -8,5 +8,7 @@ scrape_configs:
     static_configs:
       - targets:
           - 'prometheus:9090'
+          - 'vegetables:8080'
+          - 'superheroes:8081'
     consul_sd_configs:
     - server: 'host.docker.internal:8500'

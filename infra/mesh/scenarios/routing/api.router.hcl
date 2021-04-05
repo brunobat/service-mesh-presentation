@@ -1,5 +1,5 @@
 kind = "service-router"
-name = "vegetables"
+name = "api"
 routes = [
   {
     match {
@@ -10,6 +10,8 @@ routes = [
 
     destination {
       service = "vegetables"
+      service_subset = "v2"
+      prefix_rewrite = "/"
     }
   },
   {
@@ -21,6 +23,7 @@ routes = [
 
     destination {
       service = "superheroes"
+      prefix_rewrite = "/"
     }
   },
 ]

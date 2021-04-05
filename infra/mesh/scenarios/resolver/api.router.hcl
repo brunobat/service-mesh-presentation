@@ -10,6 +10,7 @@ routes = [
 
     destination {
       service = "vegetables"
+      prefix_rewrite = "/"
     }
   },
   {
@@ -21,6 +22,7 @@ routes = [
 
     destination {
       service = "superheroes"
+      prefix_rewrite = "/"
     }
   },
 ]

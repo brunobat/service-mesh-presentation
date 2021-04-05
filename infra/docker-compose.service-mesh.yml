@@ -11,6 +11,26 @@ services:
       - 8502:8502
     networks:
       - mesh
+  vegetables: &vegetables
+    image: service-mesh-presentation/vegetables
+    environment:
+      SOME_LIVE_PROPERTY: I'm vegetables at Version 1
+      QUARKUS_LOG_LEVEL: trace
+    build:
+      context: ../apps
+      dockerfile: Dockerfile
+      # Set mode MODE=dev to build with local target resources (triggers target=vegetablesdev) - MODE=dev observability build
+      target: vegetables${MODE:-}
+
+  superheroes: &superheroes
+    image: service-mesh-presentation/superheroes
+    environment:
+      SOME_LIVE_PROPERTY: I'm superheroes at Version 1
+    build:
+      context: ../apps
+      dockerfile: Dockerfile
+      # Set mode MODE=dev to build with local target resources (triggers target=superheroesdev) - MODE=dev observability build
+      target: superheroes${MODE:-}
 
   vegetables-connect:
     image: consul-connect-envoy
@@ -20,11 +40,14 @@ services:
     network_mode: "service:vegetables"
     restart: on-failure
     environment:
+      SERVICE_CONFIG: /sidecar/templates/proxy
       CONSUL_HTTP_ADDR: host.docker.internal:8500
       CONSUL_GRPC_ADDR: host.docker.internal:8502
       CONSUL_SERVICE_NAME: vegetables
-      CONSUL_SERVICE_ID: ${VEGETABLES_VERSION:-vegetables}
+      CONSUL_SERVICE_ID: ${VEGETABLES_VERSION:-vegetables-v1}
       CONSUL_SERVICE_PORT: 8080
+      CONSUL_TAGS: |
+        - v1 
       CONSUL_PROXY_UPSTREAMS: |
         - DESTINATION_NAME: superheroes
           LOCAL_BIND_PORT: 8000
@@ -35,7 +58,16 @@ services:
         - DESTINATION_NAME: rabbitmq
           LOCAL_BIND_PORT: 5672
           LOCAL_BIND_ADDRESS: 127.0.0.1
-    command: ["consul", "connect", "envoy", "-sidecar-for", "${VEGETABLES_VERSION:-vegetables}", "-http-addr", "http://host.docker.internal:8500", "-grpc-addr", "host.docker.internal:8502", "-admin-bind", "127.0.0.1:0", "--" , "-l", "trace" ]
+      CONSUL_CHECKS:  |
+        - NAME: health uri
+          PROTOCOL: http
+          PATH: /health
+          INTERVAL: 10s
+        - NAME: live uri
+          PROTOCOL: http
+          PATH: /health/live
+          INTERVAL: 10s
+    command: ["consul", "connect", "envoy", "-sidecar-for", "${VEGETABLES_VERSION:-vegetables-v1}", "-admin-bind", "127.0.0.1:0", "--" , "-l", "trace" ]
   superheroes-connect:
     image: consul-connect-envoy
     build:
@@ -43,11 +75,14 @@ services:
       dockerfile: Dockerfile
     network_mode: "service:superheroes"
     environment:
+      SERVICE_CONFIG: /sidecar/templates/proxy
       CONSUL_HTTP_ADDR: host.docker.internal:8500
       CONSUL_GRPC_ADDR: host.docker.internal:8502
       CONSUL_SERVICE_NAME: superheroes
       CONSUL_SERVICE_PORT: 8080
-      CONSUL_SERVICE_ID: ${SUPERHEROES_VERSION:-superheroes}
+      CONSUL_SERVICE_ID: ${SUPERHEROES_VERSION:-superheroes-v1}
+      CONSUL_TAGS: |
+        - v1
       CONSUL_PROXY_UPSTREAMS: |
         - DESTINATION_NAME: vegetables
           LOCAL_BIND_PORT: 8000
@@ -58,7 +93,16 @@ services:
         - DESTINATION_NAME: rabbitmq
           LOCAL_BIND_PORT: 5672
           LOCAL_BIND_ADDRESS: 127.0.0.1
-    command: ["consul", "connect", "envoy", "-sidecar-for", "${SUPERHEROES_VERSION:-superheroes}", "-http-addr", "http://host.docker.internal:8500", "-grpc-addr", "host.docker.internal:8502", "-admin-bind", "127.0.0.1:0", "--" , "-l", "trace" ]
+      CONSUL_CHECKS:  |
+        - NAME: health uri
+          PROTOCOL: http
+          PATH: /health
+          INTERVAL: 10s
+        - NAME: live uri
+          PROTOCOL: http
+          PATH: /health/live
+          INTERVAL: 10s
+    command: ["consul", "connect", "envoy", "-sidecar-for", "${SUPERHEROES_VERSION:-superheroes-v1}", "-admin-bind", "127.0.0.1:0", "--" , "-l", "trace" ]
     restart: on-failure
   database-connect:
     image: consul-connect-envoy
@@ -67,13 +111,14 @@ services:
       dockerfile: Dockerfile
     network_mode: "service:database"
     environment:
+      SERVICE_CONFIG: /sidecar/templates/proxy
       CONSUL_HTTP_ADDR: host.docker.internal:8500
       CONSUL_GRPC_ADDR: host.docker.internal:8502
       CONSUL_SERVICE_NAME: database
       CONSUL_SERVICE_PORT: 5432
       CONSUL_SERVICE_ID: ${DATABASE_VERSION:-database}
       #We don't define upstreams for database
-    command: ["consul", "connect", "envoy", "-sidecar-for", "${DATABASE_VERSION:-database}", "-http-addr", "http://host.docker.internal:8500", "-grpc-addr", "host.docker.internal:8502", "-admin-bind", "127.0.0.1:0", "--" , "-l", "trace" ]
+    command: ["consul", "connect", "envoy", "-sidecar-for", "${DATABASE_VERSION:-database}", "-admin-bind", "127.0.0.1:0", "--" , "-l", "trace" ]
     restart: on-failure
   rabbitmq-connect:
     image: consul-connect-envoy
@@ -82,11 +127,110 @@ services:
       dockerfile: Dockerfile
     network_mode: "service:rabbitmq"
     environment:
+      SERVICE_CONFIG: /sidecar/templates/proxy
       CONSUL_HTTP_ADDR: host.docker.internal:8500
       CONSUL_GRPC_ADDR: host.docker.internal:8502
       CONSUL_SERVICE_NAME: rabbitmq
       CONSUL_SERVICE_PORT: 5672
       CONSUL_SERVICE_ID: ${RABBITMQ_VERSION:-rabbitmq}
       #We don't define upstreams for database
-    command: ["consul", "connect", "envoy", "-sidecar-for", "${RABBITMQ_VERSION:-rabbitmq}", "-http-addr", "http://host.docker.internal:8500", "-grpc-addr", "host.docker.internal:8502", "-admin-bind", "127.0.0.1:0", "--" , "-l", "trace" ]
+    command: ["consul", "connect", "envoy", "-sidecar-for", "${RABBITMQ_VERSION:-rabbitmq}", "-admin-bind", "127.0.0.1:0", "--" , "-l", "trace" ]
     restart: on-failure
+
+  vegetables-v2:
+    <<: *vegetables
+    environment:
+      SOME_LIVE_PROPERTY: I'm a vegetables Release Candidate at version 2
+
+  superheroes-v2:
+    <<: *superheroes
+    environment:
+      SOME_LIVE_PROPERTY: I'm a superheroes Release Candidate at version 2
+
+  vegetables-connect-v2:
+    image: consul-connect-envoy
+    build:
+      context: mesh
+      dockerfile: Dockerfile
+    network_mode: "service:vegetables-v2"
+    restart: on-failure
+    environment:
+      SERVICE_CONFIG: /sidecar/templates/proxy
+      CONSUL_HTTP_ADDR: host.docker.internal:8500
+      CONSUL_GRPC_ADDR: host.docker.internal:8502
+      CONSUL_SERVICE_NAME: vegetables
+      CONSUL_SERVICE_ID: vegetables-v2
+      CONSUL_SERVICE_PORT: 8080
+      CONSUL_TAGS: |
+        - v2 
+      CONSUL_PROXY_UPSTREAMS: |
+        - DESTINATION_NAME: superheroes
+          LOCAL_BIND_PORT: 8000
+          LOCAL_BIND_ADDRESS: 127.0.0.1
+        - DESTINATION_NAME: database
+          LOCAL_BIND_PORT: 5432
+          LOCAL_BIND_ADDRESS: 127.0.0.1
+        - DESTINATION_NAME: rabbitmq
+          LOCAL_BIND_PORT: 5672
+          LOCAL_BIND_ADDRESS: 127.0.0.1
+      CONSUL_CHECKS:  |
+        - NAME: health uri
+          PROTOCOL: http
+          PATH: /health
+          INTERVAL: 10s
+        - NAME: live uri
+          PROTOCOL: http
+          PATH: /health/live
+          INTERVAL: 10s
+    command: ["consul", "connect", "envoy", "-sidecar-for", "vegetables-v2",  "-admin-bind", "127.0.0.1:0", "--" , "-l", "trace" ]
+  superheroes-connect-v2:
+    image: consul-connect-envoy
+    build:
+      context: mesh
+      dockerfile: Dockerfile
+    network_mode: "service:superheroes-v2"
+    environment:
+      SERVICE_CONFIG: /sidecar/templates/proxy
+      CONSUL_HTTP_ADDR: host.docker.internal:8500
+      CONSUL_GRPC_ADDR: host.docker.internal:8502
+      CONSUL_SERVICE_NAME: superheroes
+      CONSUL_SERVICE_PORT: 8080
+      CONSUL_SERVICE_ID: superheroes-v2
+      CONSUL_PROXY_UPSTREAMS: |
+        - DESTINATION_NAME: vegetables
+          LOCAL_BIND_PORT: 8000
+          LOCAL_BIND_ADDRESS: 127.0.0.1
+        - DESTINATION_NAME: database
+          LOCAL_BIND_PORT: 5432
+          LOCAL_BIND_ADDRESS: 127.0.0.1
+        - DESTINATION_NAME: rabbitmq
+          LOCAL_BIND_PORT: 5672
+          LOCAL_BIND_ADDRESS: 127.0.0.1
+      CONSUL_TAGS: |
+        - v2 
+      CONSUL_CHECKS:  |
+        - NAME: health uri
+          PROTOCOL: http
+          PATH: /health
+          INTERVAL: 10s
+        - NAME: live uri
+          PROTOCOL: http
+          PATH: /health/live
+          INTERVAL: 10s
+    command: ["consul", "connect", "envoy", "-sidecar-for", "superheroes-v2", "-admin-bind", "127.0.0.1:0", "--" , "-l", "trace" ]
+  ingress:
+    image: consul-connect-envoy
+    build:
+      context: mesh
+      dockerfile: Dockerfile
+    environment:
+      CENTRAL_CONFIG_DIR: /templates/ingress
+      CONSUL_HTTP_ADDR: host.docker.internal:8500
+      CONSUL_GRPC_ADDR: host.docker.internal:8502
+      CONSUL_INGRESS_SERVICES: |
+        - NAME: api
+          PROTOCOL: http
+          PORT: 8080
+    volumes:
+      - ./mesh/ingress/templates:/templates/ingress
+    command: ["consul", "connect", "envoy", "-gateway=ingress", "-register", "-service", "ingress-service", "-address", "{{ GetInterfaceIP \"eth0\" }}:8100"]

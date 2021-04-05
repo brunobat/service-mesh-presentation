@@ -1,15 +1,24 @@
 #The reason for this file has to do with how docker-compose merge strategy works and incompatible networks and modes in this demo
 version: "3.9"
 services:
+  ingress:
+    networks:
+      - mesh
+    ports:
+      - 8080:8080
   prometheus:
     networks:
       - mesh
   vegetables:
     networks:
       - mesh
-    ports:
-      - 8080:8080
   superheroes:
+    networks:
+      - mesh
+  vegetables-v2:
+    networks:
+      - mesh
+  superheroes-v2:
     networks:
       - mesh
   database:

@@ -61,15 +61,15 @@ public class CamelRoutesSetup {
             }
 
             private void configMessageProducer() {
-                final String toUri = "rabbitmq:" + "demo" +
+                final String toUri = "rabbitmq:" + "amq.direct" +
                         "?autoDelete=" + "false" +
-                        "&declare=false" +
+                        "&declare=true" +
                         "&addresses=" + host + ":" + port +
                         "&username=" + "rabbitmq" +
                         "&password=" + "rabbitmq" +
                         "&vhost=" + "demo" +
-                        "&routingKey=" + "demo" +
-                        "&queue=" + "demo";
+                        "&routingKey=" + "demoQueue" +
+                        "&queue=" + "demoQueue";
 
                 log.info("adding route: {}", toUri);
 

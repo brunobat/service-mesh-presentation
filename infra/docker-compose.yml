@@ -7,7 +7,7 @@ services:
 #      RABBITMQ_ERLANG_COOKIE: ${RABBITMQ_ERLANG_COOKIE}
       RABBITMQ_DEFAULT_USER: rabbitmq
       RABBITMQ_DEFAULT_PASS: rabbitmq
-      RABBITMQ_DEFAULT_VHOST: /demo
+      RABBITMQ_DEFAULT_VHOST: demo
   
   database:
     image: postgres:11.5

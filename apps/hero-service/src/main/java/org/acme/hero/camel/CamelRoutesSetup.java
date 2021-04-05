@@ -64,9 +64,9 @@ public class CamelRoutesSetup {
 
             private void consumeMessages() throws Exception {
                 final String fromUri =
-                    "rabbitmq:" + "demo" +
+                    "rabbitmq:" + "amq.direct" +
                     "?autoDelete=" + "false" +
-                    "&declare=false" +
+                    "&declare=true" +
                     "&addresses=" + host + ":" + port +
                     "&username=" + "rabbitmq" +
                     "&password=" + "rabbitmq" +

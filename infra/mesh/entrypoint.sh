@@ -1,6 +1,5 @@
 #!/bin/bash
 # Modfied source from https://github.com/nicholasjackson/docker-consul-envoy/blob/master/entrypoint.sh for our use case
-set -e
 
 export SERVICE_ADDRESS=$(hostname -i)
 # Wait until Consul can be contacted
@@ -90,7 +89,10 @@ clear_consul_central_config(){
   for i in $(consul config list --kind terminating-gateway ); do
     consul config delete --kind terminating-gateway --name $i
   done
-  # Remove all templates
+  # Remove all outputted values from templates
+  for file in `ls -v $CENTRAL_CONFIG_DIR/*.hcl`; do
+    rm $file
+  done
 }
 
 # Run the command if specified

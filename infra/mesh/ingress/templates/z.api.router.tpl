@@ -1,5 +1,5 @@
 kind = "service-router"
-name = "vegetables"
+name = "api"
 routes = [
   {
     match {

@@ -15,6 +15,8 @@ services:
     image: service-mesh-presentation/vegetables
     environment:
       SOME_LIVE_PROPERTY: I'm vegetables at Version 1
+      QUARKUS_LOG_LEVEL: trace
+    build:
       context: ../apps
       dockerfile: Dockerfile
       # Set mode MODE=dev to build with local target resources (triggers target=vegetablesdev) - MODE=dev observability build
@@ -42,7 +44,7 @@ services:
       CONSUL_HTTP_ADDR: host.docker.internal:8500
       CONSUL_GRPC_ADDR: host.docker.internal:8502
       CONSUL_SERVICE_NAME: vegetables
-      CONSUL_SERVICE_ID: ${VEGETABLES_VERSION:-vegetables}
+      CONSUL_SERVICE_ID: ${VEGETABLES_VERSION:-vegetables-v1}
       CONSUL_SERVICE_PORT: 8080
       CONSUL_TAGS: |
         - v1 
@@ -65,7 +67,7 @@ services:
           PROTOCOL: http
           PATH: /health/live
           INTERVAL: 10s
-    command: ["consul", "connect", "envoy", "-sidecar-for", "${VEGETABLES_VERSION:-vegetables}", "-admin-bind", "127.0.0.1:0", "--" , "-l", "trace" ]
+    command: ["consul", "connect", "envoy", "-sidecar-for", "${VEGETABLES_VERSION:-vegetables-v1}", "-admin-bind", "127.0.0.1:0", "--" , "-l", "trace" ]
   superheroes-connect:
     image: consul-connect-envoy
     build:
@@ -78,7 +80,7 @@ services:
       CONSUL_GRPC_ADDR: host.docker.internal:8502
       CONSUL_SERVICE_NAME: superheroes
       CONSUL_SERVICE_PORT: 8080
-      CONSUL_SERVICE_ID: ${SUPERHEROES_VERSION:-superheroes}
+      CONSUL_SERVICE_ID: ${SUPERHEROES_VERSION:-superheroes-v1}
       CONSUL_TAGS: |
         - v1
       CONSUL_PROXY_UPSTREAMS: |
@@ -100,7 +102,7 @@ services:
           PROTOCOL: http
           PATH: /health/live
           INTERVAL: 10s
-    command: ["consul", "connect", "envoy", "-sidecar-for", "${SUPERHEROES_VERSION:-superheroes}", "-admin-bind", "127.0.0.1:0", "--" , "-l", "trace" ]
+    command: ["consul", "connect", "envoy", "-sidecar-for", "${SUPERHEROES_VERSION:-superheroes-v1}", "-admin-bind", "127.0.0.1:0", "--" , "-l", "trace" ]
     restart: on-failure
   database-connect:
     image: consul-connect-envoy
@@ -226,12 +228,9 @@ services:
       CONSUL_HTTP_ADDR: host.docker.internal:8500
       CONSUL_GRPC_ADDR: host.docker.internal:8502
       CONSUL_INGRESS_SERVICES: |
-        - NAME: vegetables
+        - NAME: api
           PROTOCOL: http
           PORT: 8080
-        - NAME: superheroes
-          PROTOCOL: http
-          PORT: 8090
     volumes:
       - ./mesh/ingress/templates:/templates/ingress
     command: ["consul", "connect", "envoy", "-gateway=ingress", "-register", "-service", "ingress-service", "-address", "{{ GetInterfaceIP \"eth0\" }}:8100"]

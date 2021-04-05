@@ -10,7 +10,6 @@ routes = [
 
     destination {
       service = "vegetables"
-      service_subset = "v2"
       prefix_rewrite = "/"
     }
   },

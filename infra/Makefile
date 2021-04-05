@@ -4,10 +4,10 @@ create_simple_routing_scenario:
 create_header_routing_scenario:
 	consul config write mesh/scenarios/routing/api.router.header.hcl
 
-call_vegetables_routing_scenario:
+call_routing_vegetables_scenario:
 	curl -v -L -H "Host: api.ingress.dc1.consul:8080" http://localhost:8080/vegetables/q/health
 
-call_superheroes_routing_scenario:
+call_routing_superheroes_scenario:
 	curl -v -L -H "Host: api.ingress.dc1.consul:8080" http://localhost:8080/superheroes/q/health
 
 create_resolver_scenario:
@@ -33,3 +33,11 @@ call_splitting_vegetables_scenario:
 
 call_splitting_superheroes_scenario:
 	curl -v -L -H "Host: api.ingress.dc1.consul:8080" http://localhost:8080/superheroes/q/health
+
+create_intentions_disallow_scenario:
+	consul config write mesh/scenarios/intentions/database.disallow.hcl
+	consul config write mesh/scenarios/intentions/full.disallow.hcl
+
+create_intentions_allow_scenario:
+	consul config write mesh/scenarios/intentions/database.allow.hcl
+	consul config write mesh/scenarios/intentions/full.allow.hcl

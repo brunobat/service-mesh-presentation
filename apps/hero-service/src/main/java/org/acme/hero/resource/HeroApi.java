@@ -1,7 +1,6 @@
 package org.acme.hero.resource;
 
 import org.acme.hero.data.HeroItem;
-import org.acme.hero.model.Hero;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 
@@ -13,7 +12,7 @@ import java.util.List;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
-@Path("/heros")
+@Path("/heroes")
 @Produces(APPLICATION_JSON)
 @Consumes(APPLICATION_JSON)
 public interface HeroApi {

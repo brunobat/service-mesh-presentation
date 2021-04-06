@@ -2,7 +2,6 @@
 
 package org.acme.hero.camel;
 
-import org.acme.hero.data.LegumeItem;
 import org.apache.camel.CamelContext;
 import org.apache.camel.LoggingLevel;
 import org.apache.camel.builder.RouteBuilder;

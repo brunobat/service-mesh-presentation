@@ -33,7 +33,7 @@ services:
 
   # We will use jaeger query (jaeger tracing ui and rest api) embbeding features inside grafana, so we don't need to expose the UI port directly to the host
   jaeger-query:
-    image: jaegertracing/jaeger-query
+    image: jaegertracing/jaeger-query:1.22
     environment:
       CASSANDRA_KEYSPACE: jaeger_v1_dc1
       CASSANDRA_SERVERS: cassandra

@@ -159,6 +159,7 @@ services:
     #We need to make sure fluent-bit is up to avoid failure on compose up message - (restart condition fixes the issue - but its clearer on end user)
     depends_on:
       - fluent-bit
+      - superheroes
     command: ["--reporter.grpc.host-port=jaeger-collector:14250"]
     restart: on-failure
     labels:
@@ -176,6 +177,7 @@ services:
     #We need to make sure fluent-bit is up to avoid failure on compose up message - (restart condition fixes the issue - but its clearer on end user)
     depends_on:
       - fluent-bit
+      - vegetables
     command: ["--reporter.grpc.host-port=jaeger-collector:14250"]
     restart: on-failure
     labels:

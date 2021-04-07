@@ -33,8 +33,9 @@ public class MessageSender {
     public String send(final LegumeItem legumeItem) {
         try (final ProducerTemplate template = context.createProducerTemplate()) {
             template.sendBodyAndHeaders("direct:rabbitMQ", legumeItem.getName().getBytes(UTF_8), getTraceContext());
+            log.info("Message sent: {}", legumeItem.getName());
         } catch (IOException e) {
-            log.info("Error sending message", e);
+            log.warn("Error sending message", e);
         }
         return legumeItem.getName();
     }

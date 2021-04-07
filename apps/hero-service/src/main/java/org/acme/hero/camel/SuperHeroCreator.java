@@ -36,7 +36,7 @@ public class SuperHeroCreator implements Processor {
     public void process(final Exchange exchange) throws Exception {
 
         final String legumeItem = exchange.getMessage().getBody(String.class);
-
+        log.info("Message received: {}", legumeItem);
         SpanContext spanContext = tracer.extract(Format.Builtin.TEXT_MAP,
                                                  new TextMapExtractAdapter(Map.of(
                                                      "uber-trace-id",
@@ -54,7 +54,6 @@ public class SuperHeroCreator implements Processor {
 
     @Transactional(REQUIRED)
     Hero add(final String legumeItem) {
-        log.info("Legume received: {}", legumeItem);
         final Hero hero = Hero.builder()
                               .name("SUPER-" + legumeItem)
                               .capeType(CapeType.SUPERMAN)

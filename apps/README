@@ -4,7 +4,7 @@ Legume-service (port 8080) can create vegetables and send messages to hero-servi
 
 Usefull commands:
 
-```shell
+```yml
 curl -v -L http://localhost:8080/health/live
 curl -v -L http://localhost:8081/health/live
 

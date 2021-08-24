@@ -83,6 +83,26 @@ services:
     labels:
       - service_name=vegetables
 
+  # Set services environment variables to communicate to sidecar jaeger agent
+  vegetables-open-liberty:
+    environment:
+#      - FIXME
+      - QUARKUS_JAEGER_AGENT_HOST_PORT=127.0.0.1:6831
+      - QUARKUS_JAEGER_SAMPLER_PARAM=1
+      - QUARKUS_JAEGER_SAMPLER_TYPE=const
+      - QUARKUS_JAEGER_SERVICE_NAME=vegetables
+    logging:
+      driver: fluentd
+      options:
+      # fluentd-address is always relative to the host and not the container - We are exposing 24224 fluentbit port to the host in this scenario
+        fluentd-address: 127.0.0.1:24224
+        labels: service_name
+    #We need to make sure fluent-bit is up to avoid failure on compose up message - (restart condition fixes the issue - but its clearer on end user)
+    depends_on:
+      - fluent-bit
+    labels:
+      - service_name=vegetables-open-liberty
+
   superheroes:
     environment:
       - QUARKUS_JAEGER_AGENT_HOST_PORT=127.0.0.1:6831
@@ -182,6 +202,23 @@ services:
     restart: on-failure
     labels:
       - service_name=jaeger-agent-vegetables
+  # Our jaeger agent sidecar for service vegetables
+  jaeger-agent-vegetables-open-liberty:
+    image: jaegertracing/jaeger-agent:1.22
+    logging:
+      driver: fluentd
+      options:
+      # fluentd-address is always relative to the host and not the container - We are exposing 24224 fluentbit port to the host in this scenario
+        fluentd-address: 127.0.0.1:24224
+        labels: service_name
+    #We need to make sure fluent-bit is up to avoid failure on compose up message - (restart condition fixes the issue - but its clearer on end user)
+    depends_on:
+      - fluent-bit
+      - vegetables-open-liberty
+    command: ["--reporter.grpc.host-port=jaeger-collector:14250"]
+    restart: on-failure
+    labels:
+      - service_name=jaeger-agent-vegetables-open-liberty
 # Our centralized logging system
   loki:
     image: grafana/loki:2.1.0

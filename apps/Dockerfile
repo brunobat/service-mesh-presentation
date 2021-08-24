@@ -15,6 +15,13 @@ RUN chown -R quarkus /usr/src/legume-service
 USER quarkus
 RUN mvn -Dmaven.repo.local=/usr/src/.m2 -DskipTests=true -f /usr/src/legume-service/pom.xml package
 
+FROM maven:3.6.3-jdk-11-slim as build-vegetables-open-liberty
+COPY legume-service-open-liberty/pom.xml /usr/src/legume-service-open-liberty/
+COPY legume-service-open-liberty/src /usr/src/legume-service-open-liberty/src
+USER root
+#RUN chown -R quarkus /usr/src/legume-service-open-liberty
+#USER quarkus
+RUN mvn -Dmaven.repo.local=/usr/src/.m2 -DskipTests=true -f /usr/src/legume-service-open-liberty/pom.xml package
 
 FROM quay.io/quarkus/centos-quarkus-maven:21.0.0-java11 as build-superheroes
 COPY --from=dependencies /project/.m2 /usr/src/.m2
@@ -32,6 +39,13 @@ COPY --from=build-vegetables /usr/src/legume-service/target/quarkus-app /work/
 RUN chmod 775 /work/quarkus-run.jar
 EXPOSE 8080
 CMD ["java", "-jar", "/work/quarkus-run.jar"]
+
+# Building with dependendencies all contained in Docker: docker build --target vegetables .
+FROM openliberty/open-liberty:full-java11-openj9-ubi as vegetables-open-liberty
+COPY --from=build-vegetables-open-liberty /usr/src/legume-service-open-liberty/src/main/liberty/config/server.xml /config/
+COPY --chown=1001:0  --from=build-vegetables-open-liberty /usr/src/legume-service-open-liberty/target/*.war /config/apps/
+EXPOSE 8080
+RUN configure.sh
 
 # Building with dependendencies all contained in Docker: docker build --target superheroes .
 FROM openjdk:11.0.6-jre-slim-buster as superheroes

@@ -23,6 +23,15 @@ services:
       dockerfile: Dockerfile
       # Set mode MODE=dev to build with local target resources (triggers target=vegetablesdev) - MODE=dev observability build
       target: vegetables${MODE:-}
+
+  vegetables-open-liberty:
+    image: service-mesh-presentation/vegetables-open-liberty
+    build:
+      context: ../apps
+      dockerfile: Dockerfile
+      # Set mode MODE=dev to build with local target resources (triggers target=vegetablesdev) - MODE=dev observability build
+      target: vegetables-open-liberty${MODE:-}
+
   superheroes:
     image: service-mesh-presentation/superheroes
     build:

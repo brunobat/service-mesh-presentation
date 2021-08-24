@@ -12,6 +12,7 @@
     <modules>
         <module>legume-service</module>
         <module>hero-service</module>
+<!--        <module>legume-service-open-liberty</module>-->
     </modules>
 
     <properties>

@@ -1,14 +1,27 @@
-# Work In Progress
+# The infrastructure.
+There are 2 different contexts:
+- Service mesh
+- Observability demo
 
-# Getting Started on Observability stack
+#Intro
 
-> Optional : source .alias
+To build specific docker images, `build-vegetables-open-liberty` in this example:
+```
+ cd ../apps
+ docker build --no-cache --target build-vegetables-open-liberty .
+```
 
-# Setting infrastructure for observability
+Add alias to you console:
+```
+ source .alias
+```
+# Observability demo
+
+## Setting infrastructure for observability
 
 ```shell
-docker-compose.yml -f docker-compose.yml -f docker-compose.observability up -d
-# Or for brevity with alias
+docker-compose -f docker-compose.yml -f docker-compose.observability up -d
+# Or for brevity with alias, after the command from above.
 observability up -d
 ```
 

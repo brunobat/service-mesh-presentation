@@ -23,7 +23,7 @@ import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 import static javax.ws.rs.core.Response.Status.NO_CONTENT;
 
 @ApplicationScoped
-public class LegumeResource implements LegumeApi {
+public class LegumeResource  {
 
     @Inject
     EntityManager manager;

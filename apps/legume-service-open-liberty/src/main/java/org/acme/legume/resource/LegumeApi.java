@@ -9,6 +9,8 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.ws.rs.Consumes;
@@ -26,7 +28,10 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 @Path("/legumes")
 @Produces(APPLICATION_JSON)
 @Consumes(APPLICATION_JSON)
-public interface LegumeApi {
+@ApplicationScoped
+public class LegumeApi {
+
+    @Inject LegumeResource resource;
 
     @POST
     @Path("/init")
@@ -48,7 +53,9 @@ public interface LegumeApi {
             responseCode = "500",
             description = "Internal Server Error"
     )
-    Response provision();
+    public Response provision(){
+        return resource.provision();
+    }
 
     @POST
     @Operation(
@@ -84,7 +91,9 @@ public interface LegumeApi {
             responseCode = "500",
             description = "Internal Server Error"
     )
-    public Response add(@Valid final LegumeNew legume);
+    public Response add(@Valid final LegumeNew legume){
+        return resource.add(legume);
+    }
 
     @DELETE
     @Path("{id}")
@@ -106,14 +115,16 @@ public interface LegumeApi {
             responseCode = "500",
             description = "Internal Server Error"
     )
-    Response delete(
+    public Response delete(
             @Parameter(name = "id",
                     description = "Id of the Legume to delete",
                     required = true,
                     example = "81471222-5798-11e9-ae24-57fa13b361e1",
                     schema = @Schema(description = "uuid", required = true))
             @PathParam("id")
-            @NotEmpty final String legumeId);
+            @NotEmpty final String legumeId){
+        return resource.delete(legumeId);
+    }
 
     @Operation(
             operationId = "ListLegumes",
@@ -134,5 +145,7 @@ public interface LegumeApi {
             description = "Internal Server Error"
     )
     @GET
-    List<Legume> list();
+    public List<Legume> list(){
+        return resource.list();
+    }
 }

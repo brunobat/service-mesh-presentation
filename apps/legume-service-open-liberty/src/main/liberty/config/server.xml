@@ -17,4 +17,21 @@
 
     <!-- Default SSL configuration enables trust for default certificates from the Java runtime -->
     <ssl id="defaultSSLConfig" trustDefaultCerts="true" />
+
+    <basicRegistry id="basic" realm="dummyRealm"></basicRegistry>
+
+    <dataSource
+      id="jdbc/jpadatasource"
+      jndiName="jpadatasource"
+      type="javax.sql.ConnectionPoolDataSource">
+        <jdbcDriver
+          javax.sql.ConnectionPoolDataSource="org.h2.jdbcx.JdbcDataSource"
+          javax.sql.DataSource="org.h2.jdbcx.JdbcDataSource"
+          libraryRef="SharedLibrary_H2"/>
+        <properties
+          URL="jdbc:h2:C:/Apps/db/h2/mydb.db;MV_STORE=FALSE;AUTO_SERVER=TRUE"
+          databaseName="MY_DB"
+          user="sa"
+          password="" />
+    </dataSource>
 </server>
